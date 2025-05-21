@@ -1,0 +1,55 @@
+---
+      - name: install java
+        yum:
+          name: java
+          state: present
+
+      - name: Download Nexus tar.gz file
+        get_url:
+          url: https://download.sonatype.com/nexus/3/nexus-unix-x86-64-3.78.2-04.tar.gz
+          dest: /home/ec2-user/nexus-unix-x86-64-3.78.2-04.tar.gz
+  
+      - name: Extract Nexus tar.gz file
+        unarchive:
+          src: /home/ec2-user/nexus-unix-x86-64-3.78.2-04.tar.gz
+          dest: /home/ec2-user/
+          remote_src: yes
+  
+  
+      - name: Create systemd service for Nexus
+        copy:
+          dest: /etc/systemd/system/nexus.service
+          content: |
+            [Unit]
+            Description=Nexus Repository Manager
+            After=network.target
+            
+            [Service]
+            Type=forking
+            LimitNOFILE=65536
+            User=ec2-user
+            Group=ec2-user
+            ExecStart=/home/ec2-user/nexus-3.78.2-04/bin/nexus start
+            ExecStop=/home/ec2-user/nexus-3.78.2-04/bin/nexus stop
+            Restart=on-failure
+            
+            [Install]
+            WantedBy=multi-user.target
+
+  
+      - name: selinux permission change for nexus
+        command:
+          chcon -R -t bin_t /home/ec2-user/nexus-3.78.2-04/bin/nexus
+      
+      - name: Reload systemd to recognize the new service
+        systemd:
+          daemon_reload: yes
+  
+      - name: Enable and start Nexus service
+        systemd:
+          name: nexus
+          enabled: yes
+          state: started
+
+
+...

@@ -1,63 +1,282 @@
-#Ec2 instance launch and install jenkins. This is the one menthod on installing and executing
-#install prerequisites pip, ansible, boto3, botocore
-#git need to install on server for jenkins jobs which are using git repos
-#configure AWS Credentials using export 
-#using add_host module we dynamically call created new instance and executes tasks
-
-
+  #Ec2 instance launch and install jenkins. This is the one menthod on installing and executing
+  #install prerequisites pip, ansible, boto3, botocore
+  #git need to install on server for jenkins jobs which are using git repos
+  #configure AWS Credentials using export 
+  #using add_host module we dynamically call created new instance and executes tasks
+  
 ---
-  - name: Launch EC2 Instance in Custom VPC
+  - name: Launch Jenkins EC2
     hosts: localhost
     gather_facts: no
+    vars:
+      ec2_name: "Jenkins-server"
+      ec2_key_name: "Personal-laptop-keypair"
+      ec2_instance_type: "t3.medium"
+      ec2_security_group: "sg-0dab50029ff3f2b5b"
+      ec2_image_id: "ami-0402e56c0a7afb78f"
+      ec2_region: "ap-south-1"
+      ec2_subnet_id: "subnet-03114d440064237d2"
+      ec2_assign_public_ip: true
+      ec2_env: "Dev"
+      ec2_owner: "ansible"
     tasks:
-      - name: Launch an EC2 instance
+      - name: Launch Jenkins EC2 instance
         amazon.aws.ec2_instance:
-          name: "Jenkins-server"
-          key_name: Personal-laptop-keypair  # Replace with your key pair name
-          instance_type: t2.medium
-          security_group: sg-0dab50029ff3f2b5b  # Replace with your Security Group ID
-          image_id: ami-0402e56c0a7afb78f  # Replace with a valid AMI ID
-          region: ap-south-1
-          vpc_subnet_id: subnet-03114d440064237d2  # Replace with your Subnet ID
+          name: "{{ ec2_name }}"
+          key_name: "{{ ec2_key_name }}"
+          instance_type: "{{ ec2_instance_type }}"
+          security_group: "{{ ec2_security_group }}"
+          image_id: "{{ ec2_image_id }}"
+          region: "{{ ec2_region }}"
+          vpc_subnet_id: "{{ ec2_subnet_id }}"
           network:
-            assign_public_ip: yes  # Set to yes if you want a public IP
+            assign_public_ip: "{{ ec2_assign_public_ip }}"
           tags:
-            Environment: Dev
-            Owner: ansible
-        register: ec2
+            Environment: "{{ ec2_env }}"
+            Owner: "{{ ec2_owner }}"
+        register: jenkins_ec2
   
-      - name: Show Instance Details
-        debug:
-          var: ec2.instances
-
-      - name: Wait for SSH to be ready
+      - name: Wait for Jenkins SSH
         wait_for:
-          host: "{{ ec2.instances[0].public_ip_address }}"
+          host: "{{ jenkins_ec2.instances[0].public_ip_address }}"
           port: 22
-          delay: 120
+          delay: 30
           timeout: 300
           state: started
   
-      
-
-      - name: Add instance to in-memory inventory
+      - name: Add Jenkins host
         add_host:
-          name: "{{ ec2.instances[0].public_ip_address }}"
-          groups: launched_ec2
+          name: "{{ jenkins_ec2.instances[0].public_ip_address }}"
+          groups: jenkins_hosts
+          ansible_user: ec2-user
+          ansible_ssh_private_key_file: /home/ec2-user/Personal-laptop-keypair.pem
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  
+  # Repeat the same for Nexus
+  - name: Launch Nexus EC2
+    hosts: localhost
+    gather_facts: no
+    vars:
+      ec2_name: "Nexus-server"
+      ec2_key_name: "Personal-laptop-keypair"
+      ec2_instance_type: "t2.medium"
+      ec2_security_group: "sg-0dab50029ff3f2b5b"
+      ec2_image_id: "ami-0402e56c0a7afb78f"
+      ec2_region: "ap-south-1"
+      ec2_subnet_id: "subnet-03114d440064237d2"
+      ec2_assign_public_ip: true
+      ec2_env: "Dev"
+      ec2_owner: "ansible"
+
+    tasks:
+      - name: Launch Nexus EC2 instance
+        amazon.aws.ec2_instance:
+          name: "{{ ec2_name }}"
+          key_name: "{{ ec2_key_name }}"
+          instance_type: "{{ ec2_instance_type }}"
+          security_group: "{{ ec2_security_group }}"
+          image_id: "{{ ec2_image_id }}"
+          region: "{{ ec2_region }}"
+          vpc_subnet_id: "{{ ec2_subnet_id }}"
+          network:
+            assign_public_ip: "{{ ec2_assign_public_ip }}"
+          tags:
+            Environment: "{{ ec2_env }}"
+            Owner: "{{ ec2_owner }}"
+        register: nexus_ec2
+  
+      - name: Wait for Nexus SSH
+        wait_for:
+          host: "{{ nexus_ec2.instances[0].public_ip_address }}"
+          port: 22
+          delay: 30
+          timeout: 300
+          state: started
+  
+      - name: Add Nexus host
+        add_host:
+          name: "{{ nexus_ec2.instances[0].public_ip_address }}"
+          groups: nexus_hosts
+          ansible_user: ec2-user
+          ansible_ssh_private_key_file: /home/ec2-user/Personal-laptop-keypair.pem
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  - name: Launch Sonarqube EC2
+    hosts: localhost
+    gather_facts: no
+    vars:
+      ec2_name: "sonarqube-server"
+      ec2_key_name: "Personal-laptop-keypair"
+      ec2_instance_type: "t2.medium"
+      ec2_security_group: "sg-0dab50029ff3f2b5b"
+      ec2_image_id: "ami-0402e56c0a7afb78f"
+      ec2_region: "ap-south-1"
+      ec2_subnet_id: "subnet-03114d440064237d2"
+      ec2_assign_public_ip: true
+      ec2_env: "Dev"
+      ec2_owner: "ansible"
+
+    tasks:
+      - name: Launch Sonarqube EC2 instance
+        amazon.aws.ec2_instance:
+          name: "{{ ec2_name }}"
+          key_name: "{{ ec2_key_name }}"
+          instance_type: "{{ ec2_instance_type }}"
+          security_group: "{{ ec2_security_group }}"
+          image_id: "{{ ec2_image_id }}"
+          region: "{{ ec2_region }}"
+          vpc_subnet_id: "{{ ec2_subnet_id }}"
+          network:
+            assign_public_ip: "{{ ec2_assign_public_ip }}"
+          tags:
+            Environment: "{{ ec2_env }}"
+            Owner: "{{ ec2_owner }}"
+        register: sonarqube_ec2
+
+      - name: Wait for Sonarqube SSH
+        wait_for:
+          host: "{{ sonarqube_ec2.instances[0].public_ip_address }}"
+          port: 22
+          delay: 30
+          timeout: 300
+          state: started
+
+      - name: Add Sonarqube host
+        add_host:
+          name: "{{ sonarqube_ec2.instances[0].public_ip_address }}"
+          groups: sonar_hosts
+          ansible_user: ec2-user
+          ansible_ssh_private_key_file: /home/ec2-user/Personal-laptop-keypair.pem
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  - name: Launch Docker EC2
+    hosts: localhost
+    gather_facts: no
+    vars:
+      ec2_name: "Docker-host"
+      ec2_key_name: "Personal-laptop-keypair"
+      ec2_instance_type: "t2.medium"
+      ec2_security_group: "sg-0dab50029ff3f2b5b"
+      ec2_image_id: "ami-0402e56c0a7afb78f"
+      ec2_region: "ap-south-1"
+      ec2_subnet_id: "subnet-03114d440064237d2"
+      ec2_assign_public_ip: true
+      ec2_env: "Dev"
+      ec2_owner: "ansible"
+
+    tasks:
+      - name: Launch Docker-host EC2 instance
+        amazon.aws.ec2_instance:
+          name: "{{ ec2_name }}"
+          key_name: "{{ ec2_key_name }}"
+          instance_type: "{{ ec2_instance_type }}"
+          security_group: "{{ ec2_security_group }}"
+          image_id: "{{ ec2_image_id }}"
+          region: "{{ ec2_region }}"
+          vpc_subnet_id: "{{ ec2_subnet_id }}"
+          network:
+            assign_public_ip: "{{ ec2_assign_public_ip }}"
+          tags:
+            Environment: "{{ ec2_env }}"
+            Owner: "{{ ec2_owner }}"
+        register: docker_ec2
+
+      - name: Wait for Docker-host SSH
+        wait_for:
+          host: "{{ docker_ec2.instances[0].public_ip_address }}"
+          port: 22
+          delay: 30
+          timeout: 300
+          state: started
+
+      - name: Add Docker host
+        add_host:
+          name: "{{ docker_ec2.instances[0].public_ip_address }}"
+          groups: docker_hosts
+          ansible_user: ec2-user
+          ansible_ssh_private_key_file: /home/ec2-user/Personal-laptop-keypair.pem
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  - name: Launch K8workstation EC2
+    hosts: localhost
+    gather_facts: no
+    vars:
+      ec2_name: "Kubernetes-workstation"
+      ec2_key_name: "Personal-laptop-keypair"
+      ec2_instance_type: "t2.medium"
+      ec2_security_group: "sg-0dab50029ff3f2b5b"
+      ec2_image_id: "ami-0402e56c0a7afb78f"
+      ec2_region: "ap-south-1"
+      ec2_subnet_id: "subnet-03114d440064237d2"
+      ec2_assign_public_ip: true
+      ec2_env: "Dev"
+      ec2_owner: "ansible"
+
+    tasks:
+      - name: Launch K8workstation EC2 instance
+        amazon.aws.ec2_instance:
+          name: "{{ ec2_name }}"
+          key_name: "{{ ec2_key_name }}"
+          instance_type: "{{ ec2_instance_type }}"
+          security_group: "{{ ec2_security_group }}"
+          image_id: "{{ ec2_image_id }}"
+          region: "{{ ec2_region }}"
+          vpc_subnet_id: "{{ ec2_subnet_id }}"
+          network:
+            assign_public_ip: "{{ ec2_assign_public_ip }}"
+          tags:
+            Environment: "{{ ec2_env }}"
+            Owner: "{{ ec2_owner }}"
+        register: k8workstation_ec2
+
+      - name: Wait for k8workstation SSH
+        wait_for:
+          host: "{{ k8workstation_ec2.instances[0].public_ip_address }}"
+          port: 22
+          delay: 30
+          timeout: 300
+          state: started
+
+      - name: Add k8workstation host
+        add_host:
+          name: "{{ k8workstation_ec2.instances[0].public_ip_address }}"
+          groups: kubernetes_hosts
           ansible_user: ec2-user
           ansible_ssh_private_key_file: /home/ec2-user/Personal-laptop-keypair.pem
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
 
-# run jenkins role for installation
-
-  - name: calling jenkins role and install jenkins on ec2
-    hosts: launched_ec2
-    become: yes
+  
+  # Repeat for Sonar, Docker, Kubernetes (just change vars and host groups accordingly)
+  # === PLAY TO INSTALL TOOLS VIA ROLES ===
+  
+  - name: Install Jenkins
+    hosts: jenkins_hosts
+    become: true
     roles:
       - jenkins
-
-
-...
-
-
+  
+  - name: Install Nexus
+    hosts: nexus_hosts
+    become: true
+    roles:
+      - nexus
+  
+  - name: Install SonarQube
+    hosts: sonar_hosts
+    become: true
+    roles:
+      - sonar
+  
+  - name: Install Docker
+    hosts: docker_hosts
+    become: true
+    roles:
+      - docker
+  
+  - name: Setup Kubernetes
+    hosts: kubernetes_hosts
+    become: true
+    roles:
+      - kubernetes
+  

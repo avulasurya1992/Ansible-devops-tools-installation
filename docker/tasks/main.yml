@@ -1,0 +1,42 @@
+---
+# tasks file for docker
+      - name: git install
+        yum:
+          name: git
+          state: present
+
+      - name: Download Docker install script to /home/ec2-user/
+        get_url:
+          url: https://get.docker.com
+          dest: /home/ec2-user/get-docker.sh
+
+  
+      - name: Run Docker install script
+        command: sh /home/ec2-user/get-docker.sh
+        become: yes
+
+      - name: Add ec2-user to docker group
+        user:
+          name: ec2-user
+          groups: docker
+          append: yes
+        become: yes
+        
+      - name: Reload systemd to recognize the docker service
+        systemd:
+          daemon_reload: yes
+        become: yes
+  
+      - name: Enable and start Nexus service
+        systemd:
+          name: docker
+          enabled: yes
+          state: started
+        become: yes
+
+      - name: Notify to re-login for Docker group to apply
+        debug:
+          msg: "User 'ec2-user' must log out and log back in to use Docker without sudo."
+
+
+...
