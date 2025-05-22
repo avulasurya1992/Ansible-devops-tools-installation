@@ -1,8 +1,9 @@
 ---
-      - name: install java
+    - name: install java
         yum:
           name: java
           state: present
+        become: yes
 
       - name: Download Nexus tar.gz file
         get_url:
@@ -36,20 +37,23 @@
             [Install]
             WantedBy=multi-user.target
 
+        become: yes
   
       - name: selinux permission change for nexus
         command:
           chcon -R -t bin_t /home/ec2-user/nexus-3.78.2-04/bin/nexus
+        become: yes
       
       - name: Reload systemd to recognize the new service
         systemd:
           daemon_reload: yes
+        become: yes
   
       - name: Enable and start Nexus service
         systemd:
           name: nexus
           enabled: yes
           state: started
-
+        become: yes
 
 ...
