@@ -258,19 +258,19 @@
   
   - name: Install Nexus
     hosts: nexus_hosts
-    become: true
+#    become: true
     roles:
       - nexus
   
   - name: Install SonarQube
     hosts: sonar_hosts
-    become: true
+#    become: true
     roles:
       - sonar
   
   - name: Install Docker
     hosts: docker_hosts
-    become: true
+#    become: true
     roles:
       - docker
   
