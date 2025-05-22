@@ -6,6 +6,7 @@
             - unzip
             - java-17-openjdk
           state: present
+        become: yes
   
       - name: Download Sonarqube binary zip
         get_url:
@@ -42,16 +43,19 @@
             
             [Install]
             WantedBy=multi-user.target
+        become: yes     
 
       - name: Reload systemd daemon
         systemd:
           daemon_reload: yes
+        become: yes
 
       - name: Enable and start Sonarqube service
         systemd:
           name: sonarqube
           enabled: yes
           state: started
+        become: yes
 ...
 
 
