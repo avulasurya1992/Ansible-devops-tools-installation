@@ -28,7 +28,13 @@
           enabled: yes
           state: started
         become: yes
-
+        
+      - name: git install
+        yum:
+          name: git
+          state: present
+        become: yes
+        
       - name: Notify to re-login for Docker group to apply
         debug:
           msg: "User 'ec2-user' must log out and log back in to use Docker without sudo."
