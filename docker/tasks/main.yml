@@ -1,10 +1,5 @@
 ---
 # tasks file for docker
-      - name: git install
-        yum:
-          name: git
-          state: present
-
       - name: Download Docker install script to /home/ec2-user/
         get_url:
           url: https://get.docker.com
