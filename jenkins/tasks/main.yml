@@ -50,16 +50,25 @@
           name: unzip
           state: present
 
+      - name: Check if AWS CLI is already installed
+        command: aws --version
+        register: aws_cli_check
+        ignore_errors: yes
+        changed_when: false
+
       - name: Download AWS CLI installer
         get_url:
           url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
           dest: "/tmp/awscliv2.zip"
+        when: aws_cli_check.rc != 0
 
       - name: Unzip AWS CLI installer
-        command: "unzip /tmp/awscliv2.zip -d /tmp/"
+        command: unzip /tmp/awscliv2.zip -d /tmp/
+        when: aws_cli_check.rc != 0
 
       - name: Install AWS CLI
-        command: "sudo /tmp/aws/install"
+        command: sudo /tmp/aws/install
+        when: aws_cli_check.rc != 0
 
       - name: Add Kubernetes repository
         copy:
