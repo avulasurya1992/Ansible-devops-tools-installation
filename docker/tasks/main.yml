@@ -22,7 +22,7 @@
           daemon_reload: yes
         become: yes
   
-      - name: Enable and start Nexus service
+      - name: Enable and start docker service
         systemd:
           name: docker
           enabled: yes
