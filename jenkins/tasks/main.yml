@@ -51,7 +51,7 @@
           state: present
 
       - name: Check if AWS CLI is already installed
-        command: aws --version
+        shell: "which aws && aws --version"
         register: aws_cli_check
         ignore_errors: yes
         changed_when: false
